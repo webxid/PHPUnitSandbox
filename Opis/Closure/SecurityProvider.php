@@ -5,7 +5,7 @@
  * Licensed under the MIT License
  * =========================================================================== */
 
-namespace WebPachage\PHPUnitSandbox\Opis\Closure;
+namespace WebPackage\PHPUnitSandbox\Opis\Closure;
 
 class SecurityProvider implements ISecurityProvider
 {

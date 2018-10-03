@@ -13,7 +13,7 @@
  *          please view the LICENSE file that was distributed with this source code
  */
 
-namespace WebPachage\PHPUnitSandbox;
+namespace WebPackage\PHPUnitSandbox;
 
 require_once __DIR__ . '/autoloader.php';
 
@@ -23,6 +23,7 @@ try {
 			$response = UnitSandbox::recoveryInstance(substr($argv, strlen(UnitSandbox::CLI_ARGV) + 1))
 				->registerMockedData()
 				->registerAutoloader()
+				->registerSpyData()
 				->run();
 
 			break;

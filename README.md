@@ -2,7 +2,7 @@
 
 This package helps to make a mockups for unit-testing in PHP v5.4 - 7.x
 
-*Current version* 0.1
+*Current version* 0.2
 \
 *Source* [https://github.com/webpackage-pro/PHPUnitSandbox](https://github.com/webpackage-pro/PHPUnitSandbox)
 
@@ -37,14 +37,14 @@ $result = UnitSandbox::execute(function () {
 });
 ```
 
-Mocked up classes are working inside other instances too.
+Mocked classes are working inside other instances too.
 ```
-class TestSandbox
+class TestClass
 {
     public static function init()
     {
         //There is some code
-        
+
         return DB::query()
             ->execute();
     }
@@ -52,15 +52,59 @@ class TestSandbox
 ```
 
 ```
-//Get result of TestSandbox::init();
+//Get result of TestClass::init();
 $result = UnitSandbox::execute(function () {
-    return \TestSandbox::init();
+    return \TestClass::init();
 });
 
 ``` 
 Both cases `$result` contains array `[1,2,3]`.
 
-*Please, see full example in `example/ExampleUnitTest.php`*
+---
+
+**Spy class**
+\
+Let's make Spy for `TestClass`
+```
+class TestClass
+{
+    private static $my_property = 'Hello world!';
+
+    public static function getProperty()
+    {
+        //There is some code
+
+        return static::$my_property;
+    }
+}
+```
+
+Rewrite private property of class TestClass;
+
+```
+UnitSandbox::spyClass('\TestClass')
+    ->defineStaticProperty('my_property', 'value');
+
+$result_private_property = UnitSandbox::execute(function () {
+    return \Spy\TestClass::getProperty();
+});
+```
+Variable `$result_private_property` will contains string `value` 
+
+\
+*Please, see all examples in `example/ExampleUnitTest.php`*
+
+---
+
+## Issues
+
+To see errors, occurred inside sendbox, needs to switch on debug mode:
+ ```
+ UnitSandbox::init()
+    ->debugMode(true);
+ ```
+
+---
 
 ## Install
 
@@ -89,13 +133,22 @@ UnitSandbox::init([
 
 **!!! Important !!!** for sandbox correct work, all autoloaders have to register via `UnitSandbox`, otherwise you get failed.
 
-## Issues
-
-PHPUnitSandbox cannot throw error in case some class and method had mocked up and sandbox logic calls wrong method name. 
-\
-*Be careful with your code.*
+---
 
 ## License
 
 **PHPUnitSandbox** is licensed under the Apache v2.0.
+
+---
+ 
+ ## Version log
+ 
+ v0.2
+ - Mocked class properties defining
+ - Pass parameters to mocked methods
+ - Spy class logic
+ - Minor fixes
+ 
+ v0.1
+ - Methods mock up features
  

@@ -13,17 +13,20 @@
  *          please view the LICENSE file that was distributed with this source code
  */
 
-namespace WebPachage\PHPUnitSandbox\Helper;
+namespace WebPackage\PHPUnitSandbox\Helper;
 
-use WebPachage\PHPUnitSandbox\UnitSandbox;
+use WebPackage\PHPUnitSandbox\UnitSandbox;
 
 /**
  * Class MockClass
  *
- * @package WebPachage\PHPUnitSandbox\Helper
+ * @package WebPackage\PHPUnitSandbox\Helper
  */
 class MockClass
 {
+	private $is_spy = false;
+	private $spy_namespace = '';
+
 	/**
 	 * @var array
 	 * [
@@ -31,11 +34,45 @@ class MockClass
 	 * 			'call_type' => string,
 	 * 			'return' => string | \Closure
 	 * 		],
+	 * 		...
 	 * ]
 	 */
 	private $methods = [];
 
+	/**
+	 * @var array
+	 * [
+	 * 		name => mixed,
+	 * 		...
+	 * ]
+	 */
+	private $consts = [];
+
+	/**
+	 * @var array
+	 * [
+	 * 		name => mixed,
+	 * 		...
+	 * ]
+	 */
+	private $static_properties = [];
+
+	/**
+	 * @var array
+	 * [
+	 * 		name => mixed,
+	 * 		...
+	 * ]
+	 */
+	private $properties = [];
+
+	#region Magic methods
+
 	public function __construct() {}
+
+	#endregion
+
+	#region Setters
 
 	/**
 	 * Mocks up static method
@@ -61,15 +98,130 @@ class MockClass
 		return $this->mockup($method_name, $return, UnitSandbox::CALL_TYPE_OBJECT);
 	}
 
+	/**
+	 * @param $name
+	 * @param $value
+	 *
+	 * @return MockClass
+	 */
+	public function defineConst($name, $value)
+	{
+		if (is_array($value) || is_object($value)) {
+			throw new \InvalidArgumentException('Invalid $value');
+		}
+
+		return $this->define($name, $value, UnitSandbox::VAR_TYPE_CONST);
+	}
+
+	/**
+	 * @param $name
+	 * @param $value
+	 *
+	 * @return MockClass
+	 */
+	public function defineStaticProperty($name, $value)
+	{
+		return $this->define($name, $value, UnitSandbox::VAR_TYPE_STATIC_PROPERTY);
+	}
+
+	/**
+	 * @param $name
+	 * @param $value
+	 *
+	 * @return MockClass
+	 */
+	public function defineProperty($name, $value)
+	{
+		return $this->define($name, $value, UnitSandbox::VAR_TYPE_PROPERTY);
+	}
+
+	/**
+	 * @param bool $is_spy
+	 *
+	 * @return $this
+	 */
+	public function setSpyStatus($is_spy)
+	{
+		$this->is_spy = (bool) $is_spy;
+
+		return $this;
+	}
+
+	/**
+	 * @param string $spy_namespace
+	 *
+	 * @return $this
+	 */
+	public function setSpyNamespace($spy_namespace)
+	{
+		if (empty($spy_namespace) || !is_string($spy_namespace)) {
+			throw new \InvalidArgumentException('Invalid $sandbox_namespace');
+		}
+
+		$this->spy_namespace = $spy_namespace;
+
+		return $this;
+	}
+
+	#endregion
+
+	#region Is Condition methods
+
+	/**
+	 * Checks, is current mocked class Spy or not
+	 *
+	 * @return bool
+	 */
+	public function isSpy()
+	{
+		return $this->is_spy;
+	}
+
+	#endregion
+
+	#region Getters
+
+	/**
+	 * Returns list of collected mocked up methods of current class
+	 *
+	 * @return array - @see $this->methods
+	 */
+	public function getMethods()
+	{
+		return $this->methods;
+	}
+
+	/**
+	 * @return array
+	 * [
+	 * 		'consts' => arraay,
+	 * 		'static_properties' => array,
+	 * 		'properties' => array,
+	 * ]
+	 */
+	public function getVars()
+	{
+		return [
+			'consts' => $this->consts,
+			'static_properties' => $this->static_properties,
+			'properties' => $this->properties,
+		];
+	}
+
+	public function getSpyNamespace()
+	{
+		return $this->spy_namespace;
+	}
+
+	#endregion
+
+	#region Helpers
+
 	private function mockup($method_name, $return, $calling_type = UnitSandbox::CALL_TYPE_OBJECT)
 	{
 		// Method name validation
 		if (empty($method_name) || !is_string($method_name)) {
 			throw new \InvalidArgumentException('Invalid $method_name');
-		}
-
-		if (is_object($return)) {
-			throw new \InvalidArgumentException('Parameter $return cannot be object');
 		}
 
 		// CALL_TYPE validation
@@ -90,13 +242,34 @@ class MockClass
 		return $this;
 	}
 
-	/**
-	 * Returns list of collected mocked up methods of current class
-	 *
-	 * @return array - @see $this->methods
-	 */
-	public function getMethods()
+	private function define($name, $value, $var_type)
 	{
-		return $this->methods;
+		if (empty($name) || !is_string($name)) {
+			throw new \InvalidArgumentException('Invalid $name');
+		}
+
+		switch ($var_type) {
+			case UnitSandbox::VAR_TYPE_CONST:
+				$this->consts[$name] = $value;
+
+				break;
+
+			case UnitSandbox::VAR_TYPE_STATIC_PROPERTY:
+				$this->static_properties[$name] = $value;
+
+				break;
+
+			case UnitSandbox::VAR_TYPE_PROPERTY:
+				$this->properties[$name] = $value;
+
+				break;
+
+			default:
+				throw new \InvalidArgumentException('Invalid $type');
+		}
+
+		return $this;
 	}
+
+	#endregion
 }

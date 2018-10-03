@@ -11,7 +11,7 @@ spl_autoload_register(function($class){
    
     $class = ltrim($class, '\\');
     $dir = __DIR__ . '/';
-    $namespace = 'WebPachage\PHPUnitSandbox';
+    $namespace = 'WebPackage\PHPUnitSandbox';
     
     if(strpos($class, $namespace) === 0)
     {

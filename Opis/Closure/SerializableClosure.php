@@ -5,7 +5,7 @@
  * Licensed under the MIT License
  * =========================================================================== */
 
-namespace WebPachage\PHPUnitSandbox\Opis\Closure;
+namespace WebPackage\PHPUnitSandbox\Opis\Closure;
 
 use Closure;
 use Serializable;
@@ -21,22 +21,22 @@ class SerializableClosure implements Serializable
     /**
      * @var Closure Wrapped closure
      *
-     * @see \WebPachage\PHPUnitSandbox\Opis\Closure\SerializableClosure::getClosure()
+     * @see \WebPackage\PHPUnitSandbox\Opis\Closure\SerializableClosure::getClosure()
      */
     protected $closure;
 
     /**
      * @var ReflectionClosure A reflection instance for closure
      *
-     * @see \WebPachage\PHPUnitSandbox\Opis\Closure\SerializableClosure::getReflector()
+     * @see \WebPackage\PHPUnitSandbox\Opis\Closure\SerializableClosure::getReflector()
      */
     protected $reflector;
 
     /**
      * @var mixed Used at deserialization to hold variables
      *
-     * @see \WebPachage\PHPUnitSandbox\Opis\Closure\SerializableClosure::unserialize()
-     * @see \WebPachage\PHPUnitSandbox\Opis\Closure\SerializableClosure::getReflector()
+     * @see \WebPackage\PHPUnitSandbox\Opis\Closure\SerializableClosure::unserialize()
+     * @see \WebPackage\PHPUnitSandbox\Opis\Closure\SerializableClosure::getReflector()
      */
     protected $code;
 

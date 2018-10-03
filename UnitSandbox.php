@@ -13,11 +13,12 @@
  *          please view the LICENSE file that was distributed with this source code
  */
 
-namespace WebPachage\PHPUnitSandbox;
+namespace WebPackage\PHPUnitSandbox;
 
 use Closure;
-use WebPachage\PHPUnitSandbox\Helper\MockClass;
-use WebPachage\PHPUnitSandbox\Opis\Closure\SerializableClosure;
+use WebPackage\PHPUnitSandbox\Helper\BuildClassBody;
+use WebPackage\PHPUnitSandbox\Helper\MockClass;
+use WebPackage\PHPUnitSandbox\Opis\Closure\SerializableClosure;
 
 /**
  * Class UniSandbox
@@ -37,15 +38,20 @@ class UnitSandbox
 	const CALL_TYPE_STATIC = 'static';
 	const CALL_TYPE_OBJECT = '->';
 
+	const VAR_TYPE_CONST = 'const';
+	const VAR_TYPE_STATIC_PROPERTY = 'static property';
+	const VAR_TYPE_PROPERTY = 'property';
+
 	/**
 	 * @var static
 	 */
-	static protected $instance;
-	static protected $readable_properties = [];
-	static protected $writable_properties = [
+	protected static $instance;
+	protected static $is_sandbox = false;
+	protected static $readable_properties = [];
+	protected static $writable_properties = [
 		'system_autoload_url' => true,
 	];
-	static private $debugMode = false;
+	private static $debugMode = false;
 
 	/** @var MockClass[] */
 	private $mock_class_instance;
@@ -168,6 +174,7 @@ class UnitSandbox
 
 		self::init();
 		self::$instance->sandbox_data = $callback();
+		self::$is_sandbox = true;
 
 		return self::$instance;
 	}
@@ -176,7 +183,7 @@ class UnitSandbox
 	 *
 	 * @param Closure $function
 	 *
-	 * @return bool|string
+	 * @return mixed
 	 */
 	public static function execute(Closure $function)
 	{
@@ -186,7 +193,10 @@ class UnitSandbox
 		self::$instance->sandbox_data['execute_this_code'] = $function;
 
 		foreach (self::$instance->mock_class_instance as $class_name => $instance) {
-			self::$instance->sandbox_data['mocked_classes'][$class_name] = $instance->getMethods();
+			self::$instance->sandbox_data['mocked_classes'][$class_name]['methods'] = $instance->getMethods();
+			self::$instance->sandbox_data['mocked_classes'][$class_name]['vars'] = $instance->getVars();
+			self::$instance->sandbox_data['mocked_classes'][$class_name]['is_spy'] = $instance->isSpy();
+			self::$instance->sandbox_data['mocked_classes'][$class_name]['spy_namespace'] = $instance->getSpyNamespace();
 		}
 
 		$object = self::$instance->sandbox_data;
@@ -224,10 +234,14 @@ class UnitSandbox
 
 	public function registerMockedData()
 	{
-		foreach ($this->sandbox_data['mocked_classes'] as $class_name => $methods_list) {
-//			___dump(self::buildClassBody($class_name, $methods_list),1,1);
-			eval(self::buildClassBody($class_name, $methods_list));
-		}
+		$this->registerSandboxData(false);
+
+		return $this;
+	}
+
+	public function registerSpyData()
+	{
+		$this->registerSandboxData(true);
 
 		return $this;
 	}
@@ -235,7 +249,25 @@ class UnitSandbox
 	public function registerAutoloader()
 	{
 		foreach ($this->sandbox_data['system_autoload_url'] as $autoloader) {
+			if (!is_file($autoloader)) {
+				throw new \InvalidArgumentException('Autoloader: file does not exist at "' . $autoloader . '"');
+			}
+
 			require_once $autoloader;
+		}
+
+		return $this;
+	}
+
+	private function registerSandboxData($is_spy)
+	{
+		foreach ($this->sandbox_data['mocked_classes'] as $class_name => $class_data) {
+
+			if ($is_spy == $class_data['is_spy']) {
+				$code = self::buildClassBody($class_name, $class_data);
+
+				eval($code);
+			}
 		}
 
 		return $this;
@@ -251,11 +283,13 @@ class UnitSandbox
 	#endregion
 
 	#region Mock methods
-
+	/**
+	 * @param string $class_name
+	 *
+	 * @return MockClass
+	 */
 	public static function mockClass($class_name)
 	{
-		self::init();
-
 		if (empty($class_name) || !is_string($class_name)) {
 			throw new \InvalidArgumentException('Invalid $class_name');
 		}
@@ -264,11 +298,36 @@ class UnitSandbox
 			$class_name = substr($class_name, 1);
 		}
 
+		self::init();
+
 		if (!isset(self::$instance->mock_class_instance[$class_name]) || !self::$instance->mock_class_instance[$class_name] instanceof MockClass) {
 			self::$instance->mock_class_instance[$class_name] = new MockClass();
 		}
 
+		self::$instance->mock_class_instance[$class_name]->setSpyStatus(false);
+
 		return self::$instance->mock_class_instance[$class_name];
+	}
+
+	/**
+	 * @param string $class_name
+	 * @param string $spy_namespace
+	 *
+	 * @return MockClass
+	 */
+	public static function spyClass($class_name, $spy_namespace = 'Spy')
+	{
+		if (empty($class_name) || !is_string($class_name)) {
+			throw new \InvalidArgumentException('Invalid $class_name');
+		}
+
+		if (empty($spy_namespace) || !is_string($spy_namespace)) {
+			throw new \InvalidArgumentException('Invalid $sandbox_namespace');
+		}
+
+		return self::$instance->mockClass($class_name)
+			->setSpyStatus(true)
+			->setSpyNamespace($spy_namespace);
 	}
 
 	#endregion
@@ -289,7 +348,7 @@ class UnitSandbox
 			$class_name = substr($class_name, 1);
 		}
 
-		$callback = self::$instance->sandbox_data['mocked_classes'][$class_name];
+		$callback = self::$instance->sandbox_data['mocked_classes'][$class_name]['methods'];
 
 		if (!array_key_exists('return', $callback[$method_name])) {
 			throw new \InvalidArgumentException('There was not found methods with name "' . $method_name . '"');
@@ -298,63 +357,31 @@ class UnitSandbox
 		return $callback[$method_name]['return'];
 	}
 
-	private static function buildClassBody($class_name, $methods_list)
+	private static function buildClassBody($class_name, $class_data)
 	{
-		$namespace = explode('\\', $class_name);
-		$count = count($namespace) - 1;
-		$class_name = $namespace[$count];
+		$buildClass = BuildClassBody::init($class_name);
 
-		unset($namespace[$count]);
+		$buildClass->methods = $class_data['methods'];
+		$buildClass->spy_namespace = $class_data['spy_namespace'];
+		$buildClass->consts = $class_data['vars']['consts'];
+		$buildClass->static_properties = $class_data['vars']['static_properties'];
+		$buildClass->properties = $class_data['vars']['properties'];
+		$buildClass->is_spy = $class_data['is_spy'];
 
-		$namespace = implode('\\', $namespace);
+		$class = $buildClass->execute();
 
-		$methods = '';
-
-		//Build Methods body
-		foreach ($methods_list as $method_name => $method_data) {
-			$call_type = ($method_data['call_type'] == static::CALL_TYPE_STATIC ? static::CALL_TYPE_STATIC : '');
-
-			$return = '$this';
-
-			if ($call_type === UnitSandbox::CALL_TYPE_STATIC) {
-				$return = 'new self()';
-			}
-
-			$methods .= "
-	public {$call_type} function {$method_name}()
-	{
-		\$result = UnitSandbox::callMethod('{$namespace}\\{$class_name}', '{$method_name}');
-		
-		if (\$result === UnitSandbox::SELF_INSTANCE) {
-			return {$return};
-		} elseif (\$result instanceof \Closure) {
-			return \$result();
-		}
-		
-		return \$result;
-	}";
+		if (self::$debugMode) {
+			echo $class;
 		}
 
-		$namespace = !empty($namespace) ? "namespace {$namespace};\n" : '';
-
-		return "{$namespace}
-use WebPachage\PHPUnitSandbox\UnitSandbox;
-
-class {$class_name}
-{
-	{$methods}
-}
-";
+		return $class;
 	}
 
 	public static function cleanMockedData()
 	{
 		if (self::$instance instanceof static) {
-			self::$instance->sandbox_data = [
-				'execute_this_code' => null,
-				'system_autoload_url' => [],
-				'mocked_classes' => [],
-			];
+			self::$instance->sandbox_data['execute_this_code'] = null;
+			self::$instance->sandbox_data['mocked_classes'] = [];
 			self::$instance->mock_class_instance = [];
 		}
 	}
