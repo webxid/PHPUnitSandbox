@@ -244,7 +244,7 @@ class {$this->class_name} {$extends}
 					$result = "[\n";
 
 					foreach ($value as $key => $val) {
-						$result .= $this->getValueAsString($val, UnitSandbox::VAR_TYPE_CONST) . " => " . $this->getValueAsString($val, $var_type) . ",\n";
+						$result .= $this->getValueAsString($key, UnitSandbox::VAR_TYPE_CONST) . " => " . $this->getValueAsString($val, $var_type) . ",\n";
 					}
 
 					return $result .']';
