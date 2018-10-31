@@ -198,7 +198,7 @@ class BuildClassBody
 	{
 		$namespace = (!empty($this->class_namespace) ? "namespace {$this->class_namespace};\n" : '');
 
-		$extends = ($this->is_spy ? ' extends ' . $this->methods_namespace . '\\' . $this->class_name : '');
+		$extends = ($this->is_spy ? ' extends \\' . $this->methods_namespace . '\\' . $this->class_name : '');
 
 		return "{$namespace}
 use WebPackage\PHPUnitSandbox\UnitSandbox;
