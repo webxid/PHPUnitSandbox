@@ -1,26 +1,13 @@
 <?php
-/**
- * This file is part of PHPUnitSandbox package
- *
- * @package PHPUnitSandbox
- * @source https://github.com/webpackage-pro/PHPUnitSandbox
- *
- * @author Pavlo Matsura <webxid@ukr.net>
- * @link https://webpackage.pro
- *
- * @copyright 2018 (c) Pavlo Matsura
- * @license For the full copyright and license information,
- *          please view the LICENSE file that was distributed with this source code
- */
 
-namespace WebPackage\PHPUnitSandbox\Helper;
+namespace WebXID\PHPUnitSandbox\Helper;
 
-use WebPackage\PHPUnitSandbox\UnitSandbox;
+use WebXID\PHPUnitSandbox\UnitSandbox;
 
 /**
  * Class BuildClassBody
  *
- * @package WebPackage\PHPUnitSandbox\Helper
+ * @package WebXID\PHPUnitSandbox\Helper
  *
  * @property array $methods
  * @property string $spy_namespace
@@ -197,11 +184,14 @@ class BuildClassBody
 	private function buildClassBody(array $data)
 	{
 		$namespace = (!empty($this->class_namespace) ? "namespace {$this->class_namespace};\n" : '');
+		$extends = '';
 
-		$extends = ($this->is_spy ? ' extends \\' . $this->methods_namespace . '\\' . $this->class_name : '');
+		if ($this->is_spy) {
+			$extends = ' extends ' . (!empty($this->methods_namespace) ? '\\' . $this->methods_namespace : '') . '\\' . $this->class_name;
+		}
 
 		return "{$namespace}
-use WebPackage\PHPUnitSandbox\UnitSandbox;
+use WebXID\PHPUnitSandbox\UnitSandbox;
 
 class {$this->class_name} {$extends}
 {

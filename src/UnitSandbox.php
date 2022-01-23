@@ -1,24 +1,11 @@
 <?php
-/**
- * This file is part of PHPUnitSandbox package
- *
- * @package PHPUnitSandbox
- * @source https://github.com/webpackage-pro/PHPUnitSandbox
- *
- * @author Pavlo Matsura <webxid@ukr.net>
- * @link https://webpackage.pro
- *
- * @copyright 2018 (c) Pavlo Matsura
- * @license For the full copyright and license information,
- *          please view the LICENSE file that was distributed with this source code
- */
 
-namespace WebPackage\PHPUnitSandbox;
+namespace WebXID\PHPUnitSandbox;
 
 use Closure;
-use WebPackage\PHPUnitSandbox\Helper\BuildClassBody;
-use WebPackage\PHPUnitSandbox\Helper\MockClass;
-use WebPackage\PHPUnitSandbox\Opis\Closure\SerializableClosure;
+use WebXID\PHPUnitSandbox\Helper\BuildClassBody;
+use WebXID\PHPUnitSandbox\Helper\MockClass;
+use Opis\Closure\SerializableClosure;
 
 /**
  * Class UniSandbox
@@ -51,7 +38,8 @@ class UnitSandbox
 	protected static $writable_properties = [
 		'system_autoload_url' => true,
 	];
-	private static $debugMode = false;
+	private static $print_result = false;
+    private static $print_class = false;
 
 	/** @var MockClass[] */
 	private $mock_class_instance;
@@ -128,18 +116,18 @@ class UnitSandbox
 	#region Builders
 
 	/**
-	 * @param string|array|null $system_autoload_url
+	 * @param string|array|null $include_files
 	 *
 	 * @return UnitSandbox
 	 */
-	public static function init($system_autoload_url = null)
+	public static function init($include_files = null)
 	{
 		if (!self::$instance instanceof static) {
 			self::$instance = new static();
 
-			$system_autoload_url = (array) $system_autoload_url;
+			$include_files = (array) $include_files;
 
-			foreach ($system_autoload_url as $route) {
+			foreach ($include_files as $route) {
 				if ($route === null) {
 					continue;
 				}
@@ -206,10 +194,10 @@ class UnitSandbox
 
 		$request = 'php ' . static::SANDBOX_FILE_ROUTE . ' ' . static::CLI_ARGV . '=' . urlencode(serialize(new SerializableClosure(function() use ($object) {return $object;})));
 
-		if (self::$debugMode) {
+		if (self::$print_result) {
 			echo "[BEGIN]\n" .
 				"------------------------\n";
-			$response = system($request);
+			$response = system($request); // Executes and print a result
 			echo "\n" .
 				"------------------------\n" .
 				"[END]\n";
@@ -262,7 +250,6 @@ class UnitSandbox
 	private function registerSandboxData($is_spy)
 	{
 		foreach ($this->sandbox_data['mocked_classes'] as $class_name => $class_data) {
-
 			if ($is_spy == $class_data['is_spy']) {
 				$code = self::buildClassBody($class_name, $class_data);
 
@@ -370,8 +357,10 @@ class UnitSandbox
 
 		$class = $buildClass->execute();
 
-		if (self::$debugMode) {
-			echo $class;
+		if (self::$print_result) {
+			if (self::$print_class) echo $class . "\n";
+
+			echo "Result: \n";
 		}
 
 		return $class;
@@ -386,9 +375,10 @@ class UnitSandbox
 		}
 	}
 
-	public function debugMode($debugMode)
+	public function debugMode($print_result, $print_class)
 	{
-		self::$debugMode = (bool) $debugMode;
+		self::$print_result = (bool) $print_result;
+		self::$print_class = (bool) $print_class;
 
 		return $this;
 	}

@@ -1,126 +1,24 @@
 # PHPUnit Sandbox
 
-This package helps to make a mockups for unit-testing in PHP v5.4 - 7.x
+This package helps to make a mockups for unit-testing in PHP v5.4 - 8.x
 
-*Current version* 0.2
-\
-*Source* [https://github.com/webpackage-pro/PHPUnitSandbox](https://github.com/webpackage-pro/PHPUnitSandbox)
-
-## How To Use
-
-A mocked up methods do work only inside sandbox!
-
-**Mock up static method**
-```
-UnitSandbox::mockClass('DB')
-    ->mockStaticMethod('query', UnitSandbox::SELF_INSTANCE); //return self instance
-```
-
-**Mock up object method**
-```
-UnitSandbox::mockClass('DB')
-    ->mockStaticMethod('query', UnitSandbox::SELF_INSTANCE)
-    ->mockMethod('execute', [1,2,3]);
-```
-
-**Run logic inside sandbox**
-```
-//Make mock up of DB::query()->execute();
-UnitSandbox::mockClass('DB')
-    ->mockStaticMethod('query', UnitSandbox::SELF_INSTANCE)
-    ->mockMethod('execute', [1,2,3]);
-    
-//Get result of mocked up methods
-$result = UnitSandbox::execute(function () {
-    return \DB::query()
-        ->execute();
-});
-```
-
-Mocked classes are working inside other instances too.
-```
-class TestClass
-{
-    public static function init()
-    {
-        //There is some code
-
-        return DB::query()
-            ->execute();
-    }
-}
-```
-
-```
-//Get result of TestClass::init();
-$result = UnitSandbox::execute(function () {
-    return \TestClass::init();
-});
-
-``` 
-Both cases `$result` contains array `[1,2,3]`.
-
----
-
-**Spy class**
-\
-Let's make Spy for `TestClass`
-```
-class TestClass
-{
-    private static $my_property = 'Hello world!';
-
-    public static function getProperty()
-    {
-        //There is some code
-
-        return static::$my_property;
-    }
-}
-```
-
-Rewrite private property of class TestClass;
-
-```
-UnitSandbox::spyClass('\TestClass')
-    ->defineStaticProperty('my_property', 'value');
-
-$result_private_property = UnitSandbox::execute(function () {
-    return \Spy\TestClass::getProperty();
-});
-```
-Variable `$result_private_property` will contains string `value` 
-
-\
-*Please, see all examples in `example/ExampleUnitTest.php`*
-
----
-
-## Issues
-
-To see errors, occurred inside sendbox, needs to switch on debug mode:
- ```
- UnitSandbox::init()
-    ->debugMode(true);
- ```
+*Source* [https://github.com/webxid/PHPUnitSandbox](https://github.com/webxid/PHPUnitSandbox)
 
 ---
 
 ## Install
 
-PHPUnitSandbox does not require any special installation, PHP core extension or etc. 
-\
-Download and use it.
+PHPUnitSandbox does not require any special installation.
 
 **Requirements**
 - PHP v5.4 or later,
 - PHPUnitSandbox has to be includes directly (no autoloaders supports, including Composer),
 - PHP config has to support functions `exec()` and `eval()`.
 
-**Installation steps** 
+**Installation steps**
 
 1. Download source code
-2. Include `PHPUnitSandbox/autoloader.php` via `include_once` or `require_once` before unit-test
+2. Include `PHPUnitSandbox/bootstrap.php` via `include_once` or `require_once` to a unit-test
 3. Register necessary autoloaders
 ```
 UnitSandbox::init([
@@ -131,7 +29,107 @@ UnitSandbox::init([
     ->registerAutoloader();
 ```
 
-**!!! Important !!!** for sandbox correct work, all autoloaders have to register via `UnitSandbox`, otherwise you get failed.
+**!!! Important !!!** to make sandbox works correctly, the all autoloaders have to be register via `UnitSandbox`, otherwise you get failed.
+
+---
+
+## How To Use
+
+This lib works as sandbox: 
+- First, you setup a mock up of a class and of the class methods.
+- Then, you call `UnitSandbox::execute(function() {});` and pass mocked class using inside the `function() {}`.
+
+**Example**
+```php
+// Setup a mock up of a class `DB` and of the static method `DB::query()`
+UnitSandbox::mockClass('DB')
+    ->mockStaticMethod('query', UnitSandbox::SELF_INSTANCE); //return self instance
+
+// Then call the mocked method inside sandbox
+$result = UnitSandbox::execute(function () {
+    return \DB::query();
+});
+```
+
+## Code examples
+
+### Mock up a static method and an object method
+```php
+UnitSandbox::mockClass('DB')
+    ->mockStaticMethod('query', UnitSandbox::SELF_INSTANCE) // returns self instance
+    ->mockMethod('execute', [1,2,3]); // returns array(1,2,3)
+```
+
+
+### Mocked classes are working inside another classes too
+
+```php
+// This class should be able by autoloader
+class TestClass
+{
+    public static function init()
+    {
+        return DB::query() // the usage of the mocked class
+            ->execute();
+    }
+}
+```
+
+```php
+// Get result of TestClass::init();
+$result = UnitSandbox::execute(function () {
+    return \TestClass::init();
+});
+
+echo json_encode($result); // returns `[1,2,3]` 
+
+``` 
+
+---
+
+### Spy class
+
+_Spy class_ uses to mock up a part of a class. 
+
+
+1. We need a `TestClass` for example:
+```php
+class TestClass
+{
+    private static $my_property = 'Hello world!';
+
+    public static function getProperty()
+    {
+        return static::$my_property;
+    }
+}
+```
+
+2. Let's rewrite private property of class TestClass;
+
+```php
+UnitSandbox::spyClass('\TestClass')
+    ->defineStaticProperty('my_property', 'value');
+
+$result_private_property = UnitSandbox::execute(function () {
+    return \Spy\TestClass::getProperty();
+});
+
+echo $result_private_property; // it'll prints `value` instead `Hello world!`
+```
+
+\
+*Please, see all examples in [./tests/ExampleUnitTest.php](./tests/ExampleUnitTest.php) *
+
+---
+
+## Issues
+
+To see errors, occurred inside sandbox, needs to set up debug mode:
+ ```php
+ UnitSandbox::init()
+    ->debugMode(true, false);
+ ```
 
 ---
 
@@ -142,7 +140,10 @@ UnitSandbox::init([
 ---
  
  ## Version log
- 
+ v0.3
+ - Make composer lib
+ - Minor fixes 
+
  v0.2
  - Mocked class properties defining
  - Pass parameters to mocked methods

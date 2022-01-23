@@ -1,0 +1,24 @@
+{
+  "name": "webxid/phpunitsandbox",
+  "description": "This package helps to make a mockups for unit-testing",
+  "keywords": ["sandbox", "php-sandbox", "function", "mockup", "test-suite", "runkit"],
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Pavlo M.",
+      "email": "webxid@ukr.net"
+    }
+  ],
+  "require": {
+    "php": "^5.4|^7|^8"
+  },
+  "require-dev": {
+    "opis/closure": "^3.0.12",
+    "phpunit/phpunit": "^6.0|^7.0|^8.0|^9.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "WebXID\\PHPUnitSandbox\\": "src/"
+    }
+  }
+}

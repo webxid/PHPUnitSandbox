@@ -1,21 +1,8 @@
 <?php
-/**
- * This file is part of PHPUnitSandbox package
- *
- * @package PHPUnitSandbox
- * @source https://github.com/webpackage-pro/PHPUnitSandbox
- *
- * @author Pavlo Matsura <webxid@ukr.net>
- * @link https://webpackage.pro
- *
- * @copyright 2018 (c) Pavlo Matsura
- * @license For the full copyright and license information,
- *          please view the LICENSE file that was distributed with this source code
- */
 
-namespace WebPackage\PHPUnitSandbox;
+namespace WebXID\PHPUnitSandbox;
 
-require_once __DIR__ . '/autoloader.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 try {
 	foreach ($_SERVER['argv'] as $argv) {
