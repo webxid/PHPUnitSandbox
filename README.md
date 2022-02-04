@@ -17,9 +17,8 @@ PHPUnitSandbox does not require any special installation.
 
 **Installation steps**
 
-1. Download source code
-2. Include `PHPUnitSandbox/bootstrap.php` via `include_once` or `require_once` to a unit-test
-3. Register necessary autoloaders
+1. Run `composer require webxid/phpunitsandbox`
+2. Register additional autoloaders, if you have any one
 ```php
 UnitSandbox::init([
         __DIR__ . '/../autoloader_1.php', // it has to be absolute route of autoloader file, and it has to be .php file
