@@ -29,7 +29,7 @@ UnitSandbox::init([
     ->registerAutoloader();
 ```
 
-**!!! Important !!!** to make sandbox works correctly, the all autoloaders have to be register via `UnitSandbox`, otherwise you get failed.
+**!!! Important !!!** to make sandbox works correctly, the all autoloaders have to be register via `UnitSandbox`, otherwise you get failed. Also, please, check [./bootstrap.php](./bootstrap.php)
 
 ---
 
